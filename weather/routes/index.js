@@ -1,9 +1,24 @@
+const { Pool } = require('pg');
+const DB_CONFIG = process.env.DB_CONFIG || '';
+const pool = DB_CONFIG ? new Pool({ connectionString: DB_CONFIG, ssl: false }) : null;
 const express = require('express');
 const router = express.Router();
 const fetch = require("node-fetch");
 require('dotenv').config();
 const OWM_API_KEY = process.env.OWM_API_KEY || 'invalid_key';
 const UNITS = process.env.UNITS || 'metric';
+
+// GET /db - prueba de conexión a PostgreSQL
+router.get('/db', async (req, res) => {
+  if (!pool) return res.status(500).send('DB not configured\n');
+  try {
+    await pool.query('CREATE TABLE IF NOT EXISTS pings (ts timestamptz default now())');
+    const { rows } = await pool.query('INSERT INTO pings DEFAULT VALUES RETURNING ts');
+    res.send(`DB OK. Último ping: ${rows[0].ts.toISOString()}\n`);
+  } catch (e) {
+    res.status(500).send(`DB error: ${e.message}\n`);
+  }
+});
 
 /* GET home page. */
 router.get('/', function(req, res) {
