@@ -8,18 +8,6 @@ require('dotenv').config();
 const OWM_API_KEY = process.env.OWM_API_KEY || 'invalid_key';
 const UNITS = process.env.UNITS || 'metric';
 
-// GET /db - prueba de conexión a PostgreSQL
-router.get('/db', async (req, res) => {
-  if (!pool) return res.status(500).send('DB not configured\n');
-  try {
-    await pool.query('CREATE TABLE IF NOT EXISTS pings (ts timestamptz default now())');
-    const { rows } = await pool.query('INSERT INTO pings DEFAULT VALUES RETURNING ts');
-    res.send(`DB OK. Último ping: ${rows[0].ts.toISOString()}\n`);
-  } catch (e) {
-    res.status(500).send(`DB error: ${e.message}\n`);
-  }
-});
-
 /* GET home page. */
 router.get('/', function(req, res) {
   res.render('index', { weather: null, err: null });
@@ -49,6 +37,16 @@ router.post('/get_weather', async function (req,res) {
     res.render('index', {weather: null, error: 'Error: Unable to invoke OpenWeatherMap API'});
   }
 
+});
+
+router.get('/db', async function (req, res) {
+  if (!pool) return res.status(500).send('DB_CONFIG no definido');
+  try {
+    const r = await pool.query('SELECT version()');
+    res.status(200).send(`DB OK: ${r.rows[0].version}\n`);
+  } catch (e) {
+    res.status(500).send(`DB error: ${e.message}\n`);
+  }
 });
 
 module.exports = router;
